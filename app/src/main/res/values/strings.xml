@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">cityfit-light</string>
+    <string name="header_text">CityFit-Light</string>
+    <string name="hint1">DeviceID (see docs)</string>
+    <string name="hint2">CityFit password</string>
+    <string name="hint3">CityFit email</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
