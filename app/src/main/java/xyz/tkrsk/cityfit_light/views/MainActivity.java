@@ -8,6 +8,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -73,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         api =  CityFitREAPI.getInstance(this);
         api.getRequestQueue(this);
-        image = new ImageView(this);
         Activity ctx = this;
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -82,6 +82,14 @@ public class MainActivity extends AppCompatActivity {
         EditText password = (EditText) findViewById(R.id.editTextTextPassword2);
         EditText device_id = (EditText) findViewById(R.id.editTextTextPersonName4);
 
+        Button settingsBtn = (Button)findViewById(R.id.button);
+        settingsBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, SimpleSettings.class);
+                startActivity(i);
+            }
+        });
 
 
         device_id.setText(api.prefs.getString("device_id", api.getNewDeviceID(this)));
@@ -172,31 +180,34 @@ public class MainActivity extends AppCompatActivity {
                 }
                 try {
                     System.out.println("QRData: " + api.GetQRData());
-                    image.setImageBitmap(encodeAsBitmap(api.GetQRData()));
+                    if (image != null)
+                        image.setImageBitmap(encodeAsBitmap(api.GetQRData()));
                 } catch (WriterException e) {
                     e.printStackTrace();
                 }
 
                 AlertDialog.Builder builder =
                         new AlertDialog.Builder(ctx).
-                                setMessage("Message above the image").
                                 setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
+                                        dialog.cancel();
                                         StopGeneratingQR();
                                     }
-                                }).
-                                setView(image);
-                builder.create().show();
-                OnShowQRGeneration();
+                                });
+                OnShowQRGeneration(builder);
+                builder.setCancelable(true);
+                AlertDialog dialog_card = builder.create();
+                dialog_card.getWindow().setGravity(Gravity.TOP);
+                dialog_card.show();
             }
         });
     }
 
     Bitmap encodeAsBitmap(String str) throws WriterException {
         QRCodeWriter writer = new QRCodeWriter();
-        BitMatrix bitMatrix = writer.encode(str, BarcodeFormat.QR_CODE, 800, 800);
+        int imageSize = api.prefs.getInt("ImageSize", 200);
+        BitMatrix bitMatrix = writer.encode(str, BarcodeFormat.QR_CODE, imageSize, imageSize);
 
         int w = bitMatrix.getWidth();
         int h = bitMatrix.getHeight();
@@ -212,19 +223,23 @@ public class MainActivity extends AppCompatActivity {
         return bitmap;
     }
 
-    public void OnShowQRGeneration() {
+    public void OnShowQRGeneration(AlertDialog.Builder builder) {
+        image = new ImageView(this);
+        builder.setView(image);
         StartGeneratingQR();
     }
 
     private void StartGeneratingQR() {
-        api.shouldUpdateQRData = true;
+        api.RUFlag(true, true);
         api.QRReqHandler.post(api.qrThread);
         imageUpdateHandler.post(imageUpdate);
     }
 
     private void StopGeneratingQR() {
-        api.shouldUpdateQRData = false;
-        imageUpdateHandler.removeCallbacksAndMessages(imageUpdate);
+        api.RUFlag(true, false);
+        imageUpdateHandler.removeCallbacksAndMessages(null);
+
+        image = null;
     }
 
     @Override

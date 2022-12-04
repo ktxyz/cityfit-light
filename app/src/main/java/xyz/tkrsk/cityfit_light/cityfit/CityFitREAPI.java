@@ -81,16 +81,23 @@ public class CityFitREAPI {
             };
             sq.setTag("qr-req");
             requestQueue.add(sq);
-            if (shouldUpdateQRData)
+            if (RUFlag(false, false))
                 QRReqHandler.postDelayed(qrThread, 5000);
             else
             {
                 requestQueue.cancelAll("login-req");
                 requestQueue.cancelAll("qr-req");
+                QRReqHandler.removeCallbacksAndMessages(null);
             }
         }
     };
-    public boolean shouldUpdateQRData = false;
+
+    public synchronized boolean RUFlag(boolean u, boolean v) {
+        if (u)
+            shouldUpdateQRData = v;
+        return shouldUpdateQRData;
+    }
+    private boolean shouldUpdateQRData = false;
 
     private String aCode = "1";
     private String aLevel = "1";
